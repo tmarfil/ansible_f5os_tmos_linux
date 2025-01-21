@@ -36,3 +36,6 @@ ansible [core 2.16.6]
   jinja version = 3.1.5
   libyaml = True  
 ```
+
+ansible core support matrix:
+https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix
