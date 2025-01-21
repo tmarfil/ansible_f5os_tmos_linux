@@ -1,0 +1,78 @@
+# playbook.yml - Shows how to use both F5OS API and Linux SSH access methods
+---
+# First play - Using F5OS API access
+- name: F5OS API Management Tasks
+  # Use httpapi connection plugin for REST API access
+  # F5OS uses REST API, not NETCONF, for automation
+  connection: httpapi
+  hosts: r5900-2-f5os
+  # Don't gather facts for API connection
+  gather_facts: false
+  # Load F5OS collection which provides API modules
+  collections:
+    - f5networks.f5os
+  # Stop on any errors
+  any_errors_fatal: true
+
+  # Prompt for F5OS API password at runtime
+  vars_prompt:
+    - name: f5os_api_password
+      prompt: "Enter F5OS API password"
+      private: yes
+
+  # F5OS REST API connection settings
+  vars:
+    # F5OS web GUI credentials
+    ansible_user: "admin"
+    ansible_httpapi_password: "{{ f5os_api_password }}"
+    # Specify F5OS as the network OS for API interaction
+    ansible_network_os: "f5networks.f5os.f5os"
+    # HTTPS connection settings
+    ansible_httpapi_use_ssl: true
+    ansible_httpapi_use_proxy: false
+    ansible_httpapi_validate_certs: "no"
+    ansible_httpapi_port: 8888
+    # Connection timeouts
+    ansible_command_timeout: 1800
+    persistent_log_messages: true
+
+  # Tasks demonstrating both access methods
+  tasks:
+    # Example 1: Get Linux system information via SSH
+    - name: Gather Linux facts
+      # Use setup module to gather system info
+      setup:
+        # Only get hardware information to limit data
+        gather_subset:
+          - hardware
+      # Switch to Linux connection method
+      delegate_to: r5900-2-linux
+      # Need to specify Linux credentials for delegation
+      vars:
+        ansible_user: root
+        # Password will be provided via --ask-pass
+        ansible_connection: ssh
+      # Save Linux info for later use
+      register: linux_facts
+
+    # Example 2: Get F5OS information via REST API
+    - name: Get F5OS system information via API
+      # Use F5OS specific module which handles API calls
+      f5os_device_info:
+        gather_subset:
+          - system-info
+      # Save F5OS info for later use
+      register: f5os_facts
+
+    # Example 3: Combine information from both sources
+    - name: Show combined information
+      debug:
+        msg: |
+          F5OS Info:
+            Platform Type: {{ f5os_facts.system_info.platform_type }}
+            Software Version: {{ f5os_facts.system_info.running_software.os_version }}
+
+          Linux Info:
+            Total Memory: {{ linux_facts.ansible_facts.ansible_memtotal_mb }} MB
+            Distribution: {{ linux_facts.ansible_facts.ansible_distribution }}
+            Python Version: {{ linux_facts.ansible_facts.ansible_python_version }}
