@@ -1,26 +1,42 @@
-# playbook.yml - Shows how to use both F5OS API and Linux SSH access methods
+# playbook.yml
+# 
+# This playbook demonstrates multiple methods to interact with F5OS devices using Ansible:
+# 1. Using F5OS-specific Ansible modules from the F5 Ansible collection
+# 2. Using generic Ansible uri module to make direct REST API calls
+# 3. Using generic Ansible SSH connection to access the underlying Linux OS
+#
+# The playbook shows how to:
+# - Connect to F5OS management interface using REST API
+# - Make direct REST API calls using standard Ansible modules
+# - Connect to the Linux shell for system-level operations
+# - Combine and present information from multiple sources
+#
+# References:
+# - F5OS Collection: https://clouddocs.f5.com/products/orchestration/ansible/devel/f5os/F5OS-index.html
+# - Ansible URI Module: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.html
+# - Ansible SSH Connection: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/ssh_connection.html
+
 ---
 # First play - Using F5OS API access
 - name: F5OS API Management Tasks
   # Use httpapi connection plugin for REST API access
-  # F5OS uses REST API, not NETCONF, for automation
   connection: httpapi
   hosts: r5900-2-f5os
-  # Don't gather facts for API connection
+  # Don't gather facts for API connection as we're using REST API
   gather_facts: false
   # Load F5OS collection which provides API modules
   collections:
     - f5networks.f5os
-  # Stop on any errors
+  # Stop on any errors to ensure consistency
   any_errors_fatal: true
 
-  # Prompt for F5OS API password at runtime
+  # Prompt for F5OS API password at runtime for security
   vars_prompt:
     - name: f5os_api_password
       prompt: "Enter F5OS API password"
       private: yes
 
-  # F5OS REST API connection settings
+  # Define variables for F5OS REST API connection
   vars:
     # F5OS web GUI credentials
     ansible_user: "admin"
@@ -34,45 +50,66 @@
     ansible_httpapi_port: 8888
     # Connection timeouts
     ansible_command_timeout: 1800
+    # Enable persistent logging
     persistent_log_messages: true
+    # Base URL for F5OS REST API
+    api_base_url: "https://{{ ansible_host }}:{{ ansible_httpapi_port }}/restconf"
 
-  # Tasks demonstrating both access methods
   tasks:
-    # Example 1: Get Linux system information via SSH
-    - name: Gather Linux facts
-      # Use setup module to gather system info
+    # Task 1: Gather Linux system information using Ansible built-in setup module via SSH
+    # Reference: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/setup_module.html
+    - name: Gather Linux system information via SSH connection
       setup:
-        # Only get hardware information to limit data
+        # Only gather hardware information to limit data collection
         gather_subset:
           - hardware
-      # Switch to Linux connection method
+      # Use Linux connection method defined in inventory
       delegate_to: r5900-2-linux
-      # Need to specify Linux credentials for delegation
       vars:
         ansible_user: root
-        # Password will be provided via --ask-pass
         ansible_connection: ssh
-      # Save Linux info for later use
       register: linux_facts
 
-    # Example 2: Get F5OS information via REST API
-    - name: Get F5OS system information via API
-      # Use F5OS specific module which handles API calls
+    # Task 2: Get F5OS system information using F5OS Ansible collection module
+    # Reference: https://clouddocs.f5.com/products/orchestration/ansible/devel/f5os/modules/f5os_device_info_module.html
+    - name: Get F5OS system information using F5OS Ansible module
       f5os_device_info:
         gather_subset:
           - system-info
-      # Save F5OS info for later use
       register: f5os_facts
 
-    # Example 3: Combine information from both sources
-    - name: Show combined information
-      debug:
-        msg: |
-          F5OS Info:
-            Platform Type: {{ f5os_facts.system_info.platform_type }}
-            Software Version: {{ f5os_facts.system_info.running_software.os_version }}
+    # Task 3: Get F5OS version information using Ansible built-in uri module
+    # Reference: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.html
+    - name: Get F5OS version information using REST API direct call
+      uri:
+        url: "{{ api_base_url }}/data/openconfig-system:system/f5-system-version:version"
+        method: GET
+        force_basic_auth: true
+        user: "{{ ansible_user }}"
+        password: "{{ ansible_httpapi_password }}"
+        headers:
+          Content-Type: "application/yang-data+json"
+          Accept: "application/yang-data+json"
+        validate_certs: "{{ ansible_httpapi_validate_certs }}"
+        status_code: 200
+        return_content: true
+      register: f5os_version
 
-          Linux Info:
-            Total Memory: {{ linux_facts.ansible_facts.ansible_memtotal_mb }} MB
-            Distribution: {{ linux_facts.ansible_facts.ansible_distribution }}
-            Python Version: {{ linux_facts.ansible_facts.ansible_python_version }}
+    # Task 4: Display combined information from all sources
+    - name: Show combined information from F5OS API module, REST API, and Linux
+      debug:
+        var: system_info
+      vars:
+        system_info:
+          "F5OS Info (via F5OS Ansible module)":
+            "Platform Type": "{{ f5os_facts.system_info.platform_type }}"
+            "Software Version": "{{ f5os_facts.system_info.running_software.os_version }}"
+          "F5OS Version Info (via REST API direct call)":
+            "OS Version": "{{ f5os_version.json['f5-system-version:version']['os-version'] }}"
+            "Product": "{{ f5os_version.json['f5-system-version:version']['product'] }}"
+            "Service Version": "{{ f5os_version.json['f5-system-version:version']['service-version'] }}"
+          "Linux System Info (via SSH)":
+            "Total Memory": "{{ linux_facts.ansible_facts.ansible_memtotal_mb }} MB"
+            "Distribution": "{{ linux_facts.ansible_facts.ansible_distribution }}"
+            "Python Version": "{{ linux_facts.ansible_facts.ansible_python_version }}"
+            "Kernel Version": "{{ linux_facts.ansible_facts.ansible_kernel }}"
