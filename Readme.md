@@ -1,5 +1,3 @@
-[![asciicast](https://asciinema.org/a/O8OcDyXpuJXhKkdS23IEXF1fO.svg)](https://asciinema.org/a/O8OcDyXpuJXhKkdS23IEXF1fO)
-
 ```bash
 ansible-playbook -i hosts.yml playbook.yml --ask-pass
 ```
@@ -41,3 +39,6 @@ ansible [core 2.16.6]
 
 ansible core support matrix:
 https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix
+
+asciinema demo:
+[![asciicast](https://asciinema.org/a/O8OcDyXpuJXhKkdS23IEXF1fO.svg)](https://asciinema.org/a/O8OcDyXpuJXhKkdS23IEXF1fO)
