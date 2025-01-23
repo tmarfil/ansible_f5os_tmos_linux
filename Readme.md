@@ -1,3 +1,5 @@
+[![asciicast](https://asciinema.org/a/O8OcDyXpuJXhKkdS23IEXF1fO.svg)](https://asciinema.org/a/O8OcDyXpuJXhKkdS23IEXF1fO)
+
 ```bash
 ansible-playbook -i hosts.yml playbook.yml --ask-pass
 ```
