@@ -29,7 +29,9 @@
 # References:
 # - F5OS Collection: https://clouddocs.f5.com/products/orchestration/ansible/devel/f5os/F5OS-index.html
 # - Ansible URI Module: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.html
+# - F5OS-A/F5 rSeries - API: https://clouddocs.f5.com/api/rseries-api/rseries-api-index.html
 # - Ansible SSH Connection: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/ssh_connection.html
+# - F5OS-A/F5 rSeries - CLI: https://clouddocs.f5.com/api/rseries-api/rseries-cli-index.html
 #
 # Debug Notes:
 # - Each connection method has debug lines (commented out) that can be enabled
