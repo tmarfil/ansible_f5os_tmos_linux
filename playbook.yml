@@ -67,17 +67,6 @@
     api_base_url: "https://{{ ansible_host }}:{{ ansible_httpapi_port }}/restconf"
 
   tasks:
-    # Method 3: Using generic Ansible SSH for Linux system access
-    - name: Gather Linux system information via SSH connection
-      setup:
-        gather_subset:
-          - hardware
-      delegate_to: r5900-2-linux
-      vars:
-        ansible_user: root
-        ansible_connection: ssh
-      register: linux_facts
-
     # Method 1: Using F5OS maintained collection module
     - name: Get F5OS system information using F5OS Ansible module
       f5os_device_info:
@@ -100,6 +89,17 @@
         status_code: 200
         return_content: true
       register: f5os_version
+
+    # Method 3: Using generic Ansible SSH for Linux system access
+    - name: Gather Linux system information via SSH connection
+      setup:
+        gather_subset:
+          - hardware
+      delegate_to: r5900-2-linux
+      vars:
+        ansible_user: root
+        ansible_connection: ssh
+      register: linux_facts
 
     # Method 4: Using generic Ansible shell module for F5OS CLI
     - name: Get F5OS version information via CLI
@@ -142,3 +142,4 @@
             # "Debug Info": "{{ linux_facts | default('linux_facts not defined') }}"
       debug:
         var: system_info
+
