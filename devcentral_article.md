@@ -33,6 +33,7 @@ system version product F5OS-A
 When you create a BIG-IP tenant, it behaves like a traditional BIG-IP instance, with its own isolated management IP address and [iControl REST API](https://clouddocs.f5.com/api/icontrol-rest/) endpoint. This compatibility means your [existing BIG-IP Ansible playbooks](https://clouddocs.f5.com/products/orchestration/ansible/devel/f5_bigip/f5_bigip.html)
 will continue to work with minimal changes.  
 
+However, automation workflows for BIG-IP are not compatible with F5OS. Let's explore how we can automate just about anything on F5OS using Ansible.
 
 ## Method 1: F5OS Ansible Collection Modules
 
