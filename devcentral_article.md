@@ -257,51 +257,7 @@ Run playbooks with `--ask-pass` to prompt for the root password when accessing t
 ```bash
 ansible-playbook -i hosts.yml playbook.yml --ask-pass
 ```
-
-See the complete hosts.yml and playbook.yml examples below as templates for your own environments. 
-
-```yaml
-# hosts.yml - Ansible inventory configuration
-# This inventory file defines multiple ways to connect to the same F5OS device
-
-all:
-  children:
-    # F5OS API group - For REST API interactions via HTTPS
-    # This method is used for F5OS platform configuration and monitoring via REST
-    # User credentials configured as vars in playbook.yml
-    f5os:
-      hosts:
-        r5900-2-api:
-          ansible_host: r5900-2
-
-    # F5OS CLI group - For F5OS CLI access via SSH
-    # This method is used to run F5OS CLI commands via SSH using admin account
-    # User credentials prompted for at runtime
-    f5os_cli:
-      hosts:
-        r5900-2-cli:
-          ansible_host: r5900-2
-          ansible_user: admin
-          ansible_connection: ssh
-          ansible_become: no
-          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-
-    # Linux group - For direct Linux shell access via SSH
-    # This method is used to access the underlying Linux OS using root account
-    # User credentials prompted for at runtime using --ask-pass
-    linux_hosts:
-      hosts:
-        r5900-2-linux:
-          ansible_host: r5900-2
-          ansible_user: root
-          ansible_connection: ssh
-          ansible_become: no
-          ansible_python_interpreter: /usr/bin/python3
-          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-```
-
 See the complete hosts.yml and playbook.yml examples below as templates for your own environments. The latest versions are hosted on [GitHub](https://github.com/tmarfil/ansible_f5os_tmos_linux).
-
 
 ```yaml
 # hosts.yml - Ansible inventory configuration
