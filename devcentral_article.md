@@ -154,7 +154,7 @@ will continue to work with minimal changes.
   delegate_to: r5900-2-linux  
 ```
 
-**Mechanics:** This method combines Linux shell access with the [`f5sh` command prefix introduced in F5OS 1.8.0](https://techdocs.f5.com/en-us/f5os-a-1-8-0/relnote-f5os-a-1-8-0/title-new-in.html), allowing CLI commands to be run from Bash scripts.
+**Mechanics:** This method combines Linux shell access with the [`f5sh` command prefix introduced in F5OS 1.8.0](https://techdocs.f5.com/en-us/f5os-a-1-8-0/relnote-f5os-a-1-8-0/title-new-in.html), allowing F5OS CLI commands to be run from Bash scripts.
 
 **Pros:** 
 - Combine shell scripting with F5OS commands
