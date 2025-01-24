@@ -509,7 +509,7 @@ This tutorial focused on simple examples using default local accounts (root, adm
 In production, authentication is more complex, requiring:
 
 - SSH key-based authentication instead of passwords 
-- API token authentication vs basic auth
+- API token authentication instead basic auth
 - Role-based access control with dedicated automation accounts  
 - Secure credential management (e.g. Ansible Vault)
 - Regular credential rotation and audit logging
