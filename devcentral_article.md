@@ -301,7 +301,7 @@ all:
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 ```
 
-See the complete hosts.yml and playbook.yml examples below as templates for your own environments. The latest versions are hosted in my[GitHub](https://github.com/tmarfil/ansible_f5os_tmos_linux) repository.
+See the complete hosts.yml and playbook.yml examples below as templates for your own environments. The latest versions are hosted on [GitHub](https://github.com/tmarfil/ansible_f5os_tmos_linux) repository.
 
 
 ```yaml
@@ -531,7 +531,7 @@ all:
 ```
 
 ## Terminal Demo
-[![asciicast](https://asciinema.org/a/O8OcDyXpuJXhKkdS23IEXF1fO.svg)](https://asciinema.org/a/O8OcDyXpuJXhKkdS23IEXF1fO)
+[![asciicast](https://asciinema.org/a/DmjfpnHKnu2o2dPZ0kFBbe6fm.svg)](https://asciinema.org/a/DmjfpnHKnu2o2dPZ0kFBbe6fm)
 
 ## A Note on Software Versions
 
