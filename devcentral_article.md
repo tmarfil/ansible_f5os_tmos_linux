@@ -257,7 +257,7 @@ Run playbooks with `--ask-pass` to prompt for the root password when accessing t
 ```bash
 ansible-playbook -i hosts.yml playbook.yml --ask-pass
 ```
-See the complete hosts.yml and playbook.yml examples below as templates for your own environments. The latest versions are hosted on [GitHub](https://github.com/tmarfil/ansible_f5os_tmos_linux).
+See the complete `hosts.yml` and `playbook.yml` examples below as templates for your own environments. The latest versions are hosted on [GitHub](https://github.com/tmarfil/ansible_f5os_tmos_linux).
 
 ```yaml
 # hosts.yml - Ansible inventory configuration
