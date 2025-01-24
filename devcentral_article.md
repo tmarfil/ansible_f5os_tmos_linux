@@ -114,7 +114,6 @@ will continue to work with minimal changes.
 **Cons:**
 - Requires root access
 - Risk of affecting system stability
-- May not be supported for all operations
 
 ## Method 4: F5OS CLI via SSH
 
