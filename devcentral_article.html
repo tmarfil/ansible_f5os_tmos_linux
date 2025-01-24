@@ -1,0 +1,486 @@
+sd
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Converted Markdown</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Five Ways to Automate F5OS with Ansible: A Practical Guide</h1>
+<p>This article explores five methods for automating F5OS using Ansible, complete with real-world examples you can adapt to your environment.</p>
+<h2>Understanding F5OS Architecture</h2>
+<p>Our example system is an F5OS appliance named <code>r5900-2</code>. </p>
+<p>When you connect to an F5OS device terminal as the root user, you enter a Linux Bash shell:</p>
+<pre><code class="language-bash">[root@appliance-1(r5900-2):Active] ~ # uname -r
+3.10.0-1160.71.1.F5.1.1.1.el7_8.x86_64
+[root@appliance-1(r5900-2):Active] ~ # cat /etc/centos-release 
+CentOS Linux release 7.8.2003 (Core)
+[root@appliance-1(r5900-2):Active] ~ #
+</code></pre>
+<p>Note: Root access is rarely needed to manage an F5OS appliance. Most tasks can be accomplished via the <a href="https://clouddocs.f5.com/api/rseries-api/F5OS-A-1.8.0-cli.html">F5OS CLI</a>.</p>
+<p>If you &#39;substitute user&#39; to the &#39;admin&#39; user (via the <code>su</code> command) or SSH directly as admin@r5900-2, you enter the F5OS CLI. Here you configure low-level network components such as Link Aggregation Groups and VLANs, monitor the F5OS platform, and manage BIG-IP tenants.</p>
+<pre><code class="language-bash">[root@appliance-1(r5900-2):Active] ~ # su admin
+Welcome to the Management CLI
+admin connected from 172.18.7.92 using ssh on r5900-2 
+r5900-2# show system version
+system version os-version 1.8.0-16036
+system version service-version 1.8.0-16036 
+system version product F5OS-A
+</code></pre>
+<p>When you create a BIG-IP tenant, it behaves like a traditional BIG-IP instance, with its own isolated management IP address and <a href="https://clouddocs.f5.com/api/icontrol-rest/">iControl REST API</a> endpoint. This compatibility means your <a href="https://clouddocs.f5.com/products/orchestration/ansible/devel/f5_bigip/f5_bigip.html">existing BIG-IP Ansible playbooks</a><br>will continue to work with minimal changes.  </p>
+<h2>Method 1: F5OS Ansible Collection Modules</h2>
+<pre><code class="language-yaml"># Using F5OS maintained collection module
+- name: Get F5OS system information using F5OS Ansible module
+  f5os_device_info:
+    gather_subset:
+      - system-info
+  register: f5os_facts
+</code></pre>
+<p><strong>Mechanics:</strong> This method uses the <a href="https://clouddocs.f5.com/products/orchestration/ansible/devel/f5os/F5OS-index.html">official F5OS Ansible collection</a> to communicate with the F5OS REST API over HTTPS. The modules handle authentication, request formatting, and response parsing.</p>
+<p><strong>Pros:</strong> </p>
+<ul>
+<li>Purpose-built for F5OS operations</li>
+<li>Input validation and error handling </li>
+<li>Consistent interface across F5OS versions</li>
+<li>Simplified syntax for complex operations</li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>Limited to functionality provided by existing modules </li>
+<li>May need to wait for new modules as F5OS features evolve</li>
+</ul>
+<h2>Method 2: Direct REST API Calls</h2>
+<pre><code class="language-yaml"># Using generic Ansible uri module for REST API
+- name: Get F5OS version information using REST API direct call
+  uri:
+    url: &quot;{{ api_base_url }}/data/openconfig-system:system/f5-system-version:version&quot;
+    method: GET
+    force_basic_auth: true 
+    user: &quot;{{ ansible_user }}&quot;
+    password: &quot;{{ ansible_httpapi_password }}&quot;
+    headers:
+      Content-Type: &quot;application/yang-data+json&quot;
+      Accept: &quot;application/yang-data+json&quot;  
+    validate_certs: &quot;{{ ansible_httpapi_validate_certs }}&quot;
+    status_code: 200
+    return_content: true
+  register: f5os_version
+</code></pre>
+<p><strong>Mechanics:</strong> This approach uses <a href="https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.html">Ansible&#39;s uri module</a> to make direct REST API calls to F5OS. It provides maximum flexibility but requires detailed knowledge of the F5OS API.</p>
+<p><strong>Pros:</strong></p>
+<ul>
+<li>Access to all F5OS API endpoints </li>
+<li>No dependency on F5OS collection modules</li>
+<li>Useful for testing new F5OS features</li>
+</ul>
+<p><strong>Cons:</strong> </p>
+<ul>
+<li>Requires understanding of F5OS API structure</li>
+<li>More verbose configuration</li>
+<li>Need to handle response parsing manually</li>
+</ul>
+<h2>Method 3: Linux System Access</h2>
+<pre><code class="language-yaml"># Using generic Ansible SSH for Linux system access 
+- name: Gather Linux system information via SSH
+  setup:
+    gather_subset:
+      - hardware  
+  delegate_to: r5900-2-linux
+  vars:
+    ansible_user: root
+    ansible_connection: ssh
+  register: linux_facts
+</code></pre>
+<p><strong>Mechanics:</strong> This method establishes an SSH connection to access the underlying Linux operating system for system-level operations and diagnostics.</p>
+<p><strong>Pros:</strong></p>
+<ul>
+<li>Direct access to system resources</li>
+<li>Useful for troubleshooting </li>
+<li>Leverage existing Linux automation skills</li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>Requires root access</li>
+<li>Risk of affecting system stability</li>
+</ul>
+<h2>Method 4: F5OS CLI via SSH</h2>
+<pre><code class="language-yaml"># Using generic Ansible shell module for F5OS CLI
+- name: Get F5OS version information via CLI 
+  shell: |
+    sshpass -p &quot;{{ f5os_cli_password }}&quot; ssh -t -o StrictHostKeyChecking=no admin@{{ hostvars[&#39;r5900-2-cli&#39;][&#39;ansible_host&#39;] }} &lt;&lt; &#39;EOF&#39;
+    show sys version
+    EOF
+  delegate_to: localhost
+  register: cli_version
+</code></pre>
+<p><strong>Mechanics:</strong> This method uses SSH to connect directly to the F5OS CLI, similar to how you interact with the device manually. </p>
+<p><strong>Pros:</strong></p>
+<ul>
+<li>Familiar CLI interface</li>
+<li>Suitable for operational commands</li>
+<li>Easy to test and debug</li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>Output parsing can be complex </li>
+<li>Less idempotent than API methods</li>
+<li>Requires sshpass installation</li>
+</ul>
+<h2>Method 5: Bash Scripts with f5sh</h2>
+<pre><code class="language-yaml"># Using generic Ansible SSH connection with f5sh commands  
+- name: Transfer f5sh_example.sh script
+  copy:
+    content: |  
+      #!/bin/bash
+      f5sh show sys version
+    dest: &quot;/root/f5sh_example.sh&quot;
+    mode: &#39;0755&#39;
+  delegate_to: r5900-2-linux  
+</code></pre>
+<p><strong>Mechanics:</strong> This method combines Linux shell access with the <a href="https://techdocs.f5.com/en-us/f5os-a-1-8-0/relnote-f5os-a-1-8-0/title-new-in.html"><code>f5sh</code> command prefix introduced in F5OS 1.8.0</a>, allowing F5OS CLI commands to be run from Bash scripts.</p>
+<p><strong>Pros:</strong> </p>
+<ul>
+<li>Combine shell scripting with F5OS commands</li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>Requires root access</li>
+</ul>
+<h2>Inventory and Connection Methods</h2>
+<p>Each connection method requires specific inventory settings defined in &#39;hosts.yml&#39;:</p>
+<h3>API Connections</h3>
+<pre><code class="language-yaml"># hosts.yml 
+f5os:
+  hosts:
+    r5900-2-api:
+      ansible_host: r5900-2
+</code></pre>
+<p>Used with <code>httpapi</code> connection in the playbook:</p>
+<pre><code class="language-yaml"># playbook.yml
+- name: F5OS Management Tasks
+  connection: httpapi
+  hosts: r5900-2-api
+  vars:
+    ansible_user: &quot;admin&quot; 
+    ansible_httpapi_password: &quot;{{ f5os_api_password }}&quot;
+    ansible_network_os: &quot;f5networks.f5os.f5os&quot;
+    ansible_httpapi_use_ssl: true
+    ansible_httpapi_port: 8888
+</code></pre>
+<h3>CLI Access</h3>
+<pre><code class="language-yaml"># hosts.yml
+f5os_cli:  
+  hosts:
+    r5900-2-cli:
+      ansible_host: r5900-2
+      ansible_user: admin
+      ansible_connection: ssh
+      ansible_become: no 
+      ansible_ssh_common_args: &#39;-o StrictHostKeyChecking=no&#39;
+</code></pre>
+<p>Enables CLI commands through SSH:</p>
+<pre><code class="language-yaml"># playbook.yml  
+- name: Get F5OS version information via CLI
+  shell: |
+    sshpass -p &quot;{{ f5os_cli_password }}&quot; ssh -t -o StrictHostKeyChecking=no admin@{{ hostvars[&#39;r5900-2-cli&#39;][&#39;ansible_host&#39;] }} &lt;&lt; &#39;EOF&#39;  
+    show sys version
+    EOF
+  delegate_to: localhost
+</code></pre>
+<h3>Linux Shell Access</h3>
+<pre><code class="language-yaml"># hosts.yml
+linux_hosts:
+  hosts: 
+    r5900-2-linux:
+      ansible_host: r5900-2
+      ansible_user: root
+      ansible_connection: ssh
+      ansible_become: no
+      ansible_python_interpreter: /usr/bin/python3
+      ansible_ssh_common_args: &#39;-o StrictHostKeyChecking=no&#39;  
+</code></pre>
+<p>Used for system information gathering and script execution:</p>
+<pre><code class="language-yaml"># playbook.yml
+- name: Gather Linux system information via SSH
+  setup:
+    gather_subset:
+      - hardware
+  delegate_to: r5900-2-linux 
+  vars:
+    ansible_user: root
+    ansible_connection: ssh
+</code></pre>
+<h3>Important Notes</h3>
+<p>The inventory defines three connections to the same device:</p>
+<ul>
+<li><code>r5900-2-api</code>: HTTPS API access </li>
+<li><code>r5900-2-cli</code>: SSH CLI access with admin user</li>
+<li><code>r5900-2-linux</code>: SSH root access</li>
+</ul>
+<p>SSH configuration: </p>
+<ul>
+<li><code>StrictHostKeyChecking=no</code>: Skips host key verification</li>
+<li><code>ansible_become: no</code>: No privilege escalation </li>
+<li>Custom Python path for Linux shell access</li>
+</ul>
+<p>Run playbooks with <code>--ask-pass</code> to prompt for the root password when accessing the Linux shell:</p>
+<pre><code class="language-bash">ansible-playbook -i hosts.yml playbook.yml --ask-pass
+</code></pre>
+<p>See the complete <code>hosts.yml</code> and <code>playbook.yml</code> examples below as templates for your own environments. The latest versions are hosted on <a href="https://github.com/tmarfil/ansible_f5os_tmos_linux">GitHub</a>.</p>
+<pre><code class="language-yaml"># hosts.yml - Ansible inventory configuration
+# This inventory file defines multiple ways to connect to the same F5OS device
+
+all:
+  children:
+    # F5OS API group - For REST API interactions via HTTPS
+    # This method is used for F5OS platform configuration and monitoring via REST
+    # User credentials configured as vars in playbook.yml
+    f5os:
+      hosts:
+        r5900-2-api:
+          ansible_host: r5900-2
+
+    # F5OS CLI group - For F5OS CLI access via SSH
+    # This method is used to run F5OS CLI commands via SSH using admin account
+    # User credentials prompted for at runtime
+    f5os_cli:
+      hosts:
+        r5900-2-cli:
+          ansible_host: r5900-2
+          ansible_user: admin
+          ansible_connection: ssh
+          ansible_become: no
+          ansible_ssh_common_args: &#39;-o StrictHostKeyChecking=no&#39;
+
+    # Linux group - For direct Linux shell access via SSH
+    # This method is used to access the underlying Linux OS using root account
+    # User credentials prompted for at runtime using --ask-pass
+    linux_hosts:
+      hosts:
+        r5900-2-linux:
+          ansible_host: r5900-2
+          ansible_user: root
+          ansible_connection: ssh
+          ansible_become: no
+          ansible_python_interpreter: /usr/bin/python3
+          ansible_ssh_common_args: &#39;-o StrictHostKeyChecking=no&#39;
+</code></pre>
+<pre><code class="language-yaml"># playbook.yml
+#
+# This playbook demonstrates multiple methods to interact with F5OS devices using Ansible:
+# 1. Using F5OS-specific Ansible modules from the F5 Ansible collection
+#    - Connects via HTTPS to F5OS REST API
+#    - Uses F5OS maintained collection modules
+#    - Best for F5OS platform operations with verified modules
+#
+# 2. Using Ansible uri module to make direct REST API calls
+#    - Connects via HTTPS to F5OS REST API
+#    - Uses Ansible built-in uri module
+#    - Best for custom REST API operations or when collection modules unavailable
+#
+# 3. Using SSH connection to access the underlying Linux OS
+#    - Connects via SSH as root to Linux shell
+#    - Uses Ansible built-in setup modules
+#    - Best for system-level operations and diagnostics
+#
+# 4. Using SSH to connect as admin and run F5OS CLI commands
+#    - Connects via SSH as admin to F5OS CLI
+#    - Uses Ansible built-in shell module with sshpass
+#    - Best for running operational commands and gathering CLI output
+#
+# 5. Using SSH connection to access the underlying Linux OS
+#    - Connects via SSH as root to Linux shell
+#    - Uses Ansible built-in SSH modules
+#    - Uses Ansible built-in copy module to transfer Bash script
+#    - Uses Ansible built-in shell module to execute script and display output
+#    - Best for automated script-based management via f5sh commands
+#
+# Requirements:
+# - sshpass must be installed on the Ansible control node for F5OS CLI access
+#   Ubuntu/Debian: sudo apt-get install sshpass
+#   RHEL/CentOS: sudo yum install sshpass
+#
+# References:
+# - F5OS Collection: https://clouddocs.f5.com/products/orchestration/ansible/devel/f5os/F5OS-index.html
+# - Ansible URI Module: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.html
+# - F5OS-A/F5 rSeries - API: https://clouddocs.f5.com/api/rseries-api/rseries-api-index.html
+# - Ansible SSH Connection: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/ssh_connection.html
+# - F5OS-A/F5 rSeries - CLI: https://clouddocs.f5.com/api/rseries-api/rseries-cli-index.html
+#
+# Debug Notes:
+# - Each connection method has debug lines (commented out) that can be enabled
+# - Uncomment Debug Info lines when troubleshooting connection issues
+# - Use -vvvv verbosity for additional connection debugging
+# - CLI task can be modified to show stderr/stdout with no_log: false
+---
+- name: F5OS Management Tasks
+  connection: httpapi
+  hosts: r5900-2-api
+  gather_facts: false
+  collections:
+    - f5networks.f5os
+  any_errors_fatal: true
+
+  vars_prompt:
+    - name: f5os_api_password
+      prompt: &quot;ENTER F5OS REST API password (admin user):&quot;
+      private: yes
+    - name: f5os_cli_password
+      prompt: &quot;ENTER F5OS CLI SSH password (admin user):&quot;
+      private: yes
+
+  vars:
+    ansible_user: &quot;admin&quot;
+    ansible_httpapi_password: &quot;{{ f5os_api_password }}&quot;
+    ansible_network_os: &quot;f5networks.f5os.f5os&quot;
+    ansible_httpapi_use_ssl: true
+    ansible_httpapi_use_proxy: false
+    ansible_httpapi_validate_certs: &quot;no&quot;
+    ansible_httpapi_port: 8888
+    ansible_command_timeout: 1800
+    persistent_log_messages: true
+    api_base_url: &quot;https://{{ ansible_host }}:{{ ansible_httpapi_port }}/restconf&quot;
+
+  tasks:
+    # Method 1: Using F5OS maintained collection module
+    - name: Get F5OS system information using F5OS Ansible module
+      f5os_device_info:
+        gather_subset:
+          - system-info
+      register: f5os_facts
+
+    # Method 2: Using generic Ansible uri module for REST API
+    - name: Get F5OS version information using REST API direct call
+      uri:
+        url: &quot;{{ api_base_url }}/data/openconfig-system:system/f5-system-version:version&quot;
+        method: GET
+        force_basic_auth: true
+        user: &quot;{{ ansible_user }}&quot;
+        password: &quot;{{ ansible_httpapi_password }}&quot;
+        headers:
+          Content-Type: &quot;application/yang-data+json&quot;
+          Accept: &quot;application/yang-data+json&quot;
+        validate_certs: &quot;{{ ansible_httpapi_validate_certs }}&quot;
+        status_code: 200
+        return_content: true
+      register: f5os_version
+
+    # Method 3: Using generic Ansible SSH for Linux system access
+    - name: Gather Linux system information via SSH connection
+      setup:
+        gather_subset:
+          - hardware
+      delegate_to: r5900-2-linux
+      vars:
+        ansible_user: root
+        ansible_connection: ssh
+      register: linux_facts
+
+    # Method 4: Using generic Ansible shell module for F5OS CLI
+    - name: Get F5OS version information via CLI
+      shell: |
+        sshpass -p &quot;{{ f5os_cli_password }}&quot; ssh -t -o StrictHostKeyChecking=no admin@{{ hostvars[&#39;r5900-2-cli&#39;][&#39;ansible_host&#39;] }} &lt;&lt; &#39;EOF&#39;
+        show sys version
+        EOF
+      delegate_to: localhost
+      register: cli_version
+      changed_when: false
+      # no_log: false      # Uncomment to show CLI output for debugging
+      # failed_when: false # Uncomment to prevent CLI failures for debugging
+
+    # Method 5: Using generic Ansible SSH connection to access the underlying Linux OS
+    - name: Transfer f5sh_example.sh script to F5OS device
+      copy:
+        content: |
+          #!/bin/bash
+          f5sh show sys version
+        dest: &quot;/root/f5sh_example.sh&quot;
+        mode: &#39;0755&#39;
+      delegate_to: r5900-2-linux
+      vars:
+        ansible_user: root
+        ansible_connection: ssh
+      register: script_transfer
+
+    - name: Execute f5sh_example.sh script on F5OS device
+      shell: &quot;/root/f5sh_example.sh&quot;
+      delegate_to: r5900-2-linux
+      vars:
+        ansible_user: root
+        ansible_connection: ssh
+      register: script_output
+
+    # Display combined information from all five methods
+    - name: Show combined information from all sources
+      vars:
+        system_info:
+          &quot;F5OS Version Info (via F5 maintained F5OS Ansible module collection, communicating over HTTPS REST API, using: admin account)&quot;:
+            &quot;Platform Type&quot;: &quot;{{ f5os_facts.system_info.platform_type }}&quot;
+            &quot;Software Version&quot;: &quot;{{ f5os_facts.system_info.running_software.os_version }}&quot;
+            # &quot;Debug Info&quot;: &quot;{{ f5os_facts | default(&#39;f5os_facts not defined&#39;) }}&quot;
+          &quot;F5OS Version Info (via built-in Ansible uri module, communicating over HTTPS REST API, using: admin account)&quot;:
+            &quot;OS Version&quot;: &quot;{{ f5os_version.json[&#39;f5-system-version:version&#39;][&#39;os-version&#39;] }}&quot;
+            &quot;Product&quot;: &quot;{{ f5os_version.json[&#39;f5-system-version:version&#39;][&#39;product&#39;] }}&quot;
+            &quot;Service Version&quot;: &quot;{{ f5os_version.json[&#39;f5-system-version:version&#39;][&#39;service-version&#39;] }}&quot;
+            # &quot;Debug Info&quot;: &quot;{{ f5os_version | default(&#39;f5os_version not defined&#39;) }}&quot;
+          &quot;Linux System Info (via built-in Ansible ssh module, communicating over SSH, using: root account and bash shell)&quot;:
+            &quot;Distribution&quot;: &quot;{{ linux_facts.ansible_facts.ansible_distribution }}&quot;
+            &quot;Kernel Version&quot;: &quot;{{ linux_facts.ansible_facts.ansible_kernel }}&quot;
+            &quot;Python Version&quot;: &quot;{{ linux_facts.ansible_facts.ansible_python_version }}&quot;
+            &quot;Total Memory&quot;: &quot;{{ linux_facts.ansible_facts.ansible_memtotal_mb }} MB&quot;
+            # &quot;Debug Info&quot;: &quot;{{ linux_facts | default(&#39;linux_facts not defined&#39;) }}&quot;
+          &quot;F5OS Version Info (via built-in Ansible ssh module, communicating over SSH, using: admin account and f5_confd_cli shell)&quot;:
+            &quot;OS Version&quot;: &quot;{{ cli_version.stdout_lines[0].split()[-1] if cli_version is defined and cli_version.rc == 0 else &#39;Error getting CLI version&#39; }}&quot;
+            &quot;Service Version&quot;: &quot;{{ cli_version.stdout_lines[1].split()[-1] if cli_version is defined and cli_version.rc == 0 else &#39;Error getting CLI version&#39; }}&quot;
+            &quot;Product&quot;: &quot;{{ cli_version.stdout_lines[2].split()[-1] if cli_version is defined and cli_version.rc == 0 else &#39;Error getting CLI version&#39; }}&quot;
+            # &quot;CLI Return Code&quot;: &quot;{{ cli_version.rc | default(&#39;rc not defined&#39;) }}&quot;
+            # &quot;CLI STDOUT&quot;: &quot;{{ cli_version.stdout_lines | default(&#39;stdout not defined&#39;) }}&quot;
+            # &quot;CLI STDERR&quot;: &quot;{{ cli_version.stderr_lines | default(&#39;stderr not defined&#39;) }}&quot;
+            # &quot;Debug Info&quot;: &quot;{{ cli_version | default(&#39;cli_version not defined&#39;) }}&quot;
+          &quot;F5OS Version Info (via built-in Ansible script copy and execution modules, using: root account, bash shell, and f5sh commands)&quot;:
+            &quot;OS Version&quot;: &quot;{{ script_output.stdout_lines[0].split()[-1] if script_output is defined and script_output.rc == 0 else &#39;Error executing script&#39; }}&quot;
+            &quot;Product&quot;: &quot;{{ script_output.stdout_lines[2].split()[-1] if script_output is defined and script_output.rc == 0 else &#39;Error executing script&#39; }}&quot;
+            &quot;Service Version&quot;: &quot;{{ script_output.stdout_lines[1].split()[-1] if script_output is defined and script_output.rc == 0 else &#39;Error executing script&#39; }}&quot;
+            # &quot;Script Return Code&quot;: &quot;{{ script_output.rc | default(&#39;rc not defined&#39;) }}&quot;
+            # &quot;Script STDOUT&quot;: &quot;{{ script_output.stdout_lines | default(&#39;stdout not defined&#39;) }}&quot;
+            # &quot;Script STDERR&quot;: &quot;{{ script_output.stderr_lines | default(&#39;stderr not defined&#39;) }}&quot;
+            # &quot;Debug Info&quot;: &quot;{{ script_output | default(&#39;script_output not defined&#39;) }}&quot;
+      debug:
+        var: system_info
+(venv-2.16) 7GZL063:
+</code></pre>
+<h2>Terminal Demo</h2>
+<p><script src="https://asciinema.org/a/DmjfpnHKnu2o2dPZ0kFBbe6fm.js" id="asciicast-DmjfpnHKnu2o2dPZ0kFBbe6fm" async="true"></script><img src="https://asciinema.org/a/DmjfpnHKnu2o2dPZ0kFBbe6fm.svg" alt="asciicast"></a></p>
+<h2>A Note on Software Versions</h2>
+<p>If using the F5 maintained F5OS collection, you&#39;ll need a compatible version of Ansible:<br><a href="https://github.com/F5Networks/f5-ansible-f5os">https://github.com/F5Networks/f5-ansible-f5os</a></p>
+<p>If using an alternate method that depends on compatibility with the Python3 version on the remote host, confirm the Python3 version on your F5OS appliance:</p>
+<pre><code class="language-bash">[root@appliance-1(r5900-2):Active] ~ # python3 --version
+Python 3.6.8
+</code></pre>
+<p>...against the <a href="https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix">ansible-core support matrix</a>.</p>
+<h2>Responsible Authentication</h2>
+<p>This tutorial focused on simple examples using default local accounts (root, admin) and local authentication.</p>
+<p>In production, authentication is more complex, requiring:</p>
+<ul>
+<li>SSH key-based authentication instead of passwords </li>
+<li>API token authentication instead basic auth</li>
+<li>Role-based access control with dedicated automation accounts  </li>
+<li>Secure credential management (e.g. Ansible Vault)</li>
+<li>Regular credential rotation and audit logging</li>
+<li>Remote authentication (LDAP, TACACS+, RADIUS)</li>
+</ul>
+
+      </body>
+      </html>
+    
