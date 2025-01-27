@@ -18,7 +18,8 @@ CentOS Linux release 7.8.2003 (Core)
 
 > **Note**  
 > Root access is rarely needed to manage an F5OS appliance. Most tasks can be accomplished via the [F5OS CLI](https://clouddocs.f5.com/api/rseries-api/F5OS-A-1.8.0-cli.html).
-> If you 'substitute user' to the 'admin' user (via the `su` command) or SSH directly as admin@r5900-2, you enter the F5OS CLI. Here you configure low-level network components such as Link Aggregation Groups and VLANs, monitor the F5OS platform, and manage BIG-IP tenants.
+
+If you 'substitute user' to the 'admin' user (via the `su` command) or SSH directly as admin@r5900-2, you enter the F5OS CLI. Here you configure low-level network components such as Link Aggregation Groups and VLANs, monitor the F5OS platform, and manage BIG-IP tenants.
 
 ```bash
 [root@appliance-1(r5900-2):Active] ~ # su admin
