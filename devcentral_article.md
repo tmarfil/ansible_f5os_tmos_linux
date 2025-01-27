@@ -32,7 +32,7 @@ system version service-version 1.8.0-16036
 system version product F5OS-A
 ```
 
-The F5OS CLI is built on op of the [F5OS API](https://clouddocs.f5.com/api/rseries-api/F5OS-A-1.8.0-cli.html#r5r10). With this same admin account, you can target the F5OS API to configure anything at the F5OS layer. A simple test with 'curl' can confirm you are ready to automate via the F5OS API:
+The F5OS CLI is built on top of the [F5OS API](https://clouddocs.f5.com/api/rseries-api/F5OS-A-1.8.0-cli.html#r5r10). With this same admin account, you can target the F5OS API to configure anything at the F5OS layer. A simple test with 'curl' can confirm you are ready to automate via the F5OS API:
 
 ```bash
 curl -k -X GET \
