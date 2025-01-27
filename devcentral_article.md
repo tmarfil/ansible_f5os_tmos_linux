@@ -169,15 +169,27 @@ However, automation workflows for BIG-IP are not compatible with F5OS. Let's exp
 ## Method 5: Bash Scripts with f5sh
 
 ```yaml
-# Using generic Ansible SSH connection with f5sh commands  
-- name: Transfer f5sh_example.sh script
+# Using generic Ansible SSH connection to access the underlying Linux OS
+- name: Transfer f5sh_example.sh script to F5OS device
   copy:
-    content: |  
+    content: |
       #!/bin/bash
       f5sh show sys version
     dest: "/root/f5sh_example.sh"
     mode: '0755'
-  delegate_to: r5900-2-linux  
+  delegate_to: r5900-2-linux
+  vars:
+    ansible_user: root
+    ansible_connection: ssh
+  register: script_transfer
+
+- name: Execute f5sh_example.sh script on F5OS device
+  shell: "/root/f5sh_example.sh"
+  delegate_to: r5900-2-linux
+  vars:
+    ansible_user: root
+    ansible_connection: ssh
+  register: script_output 
 ```
 
 **Mechanics:** This method combines Linux shell access with the [`f5sh` command prefix introduced in F5OS 1.8.0](https://techdocs.f5.com/en-us/f5os-a-1-8-0/relnote-f5os-a-1-8-0/title-new-in.html), allowing F5OS CLI commands to be run from Bash scripts.
