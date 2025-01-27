@@ -42,6 +42,19 @@ curl -k -X GET \
   -u admin:'YOUR_PASSWORD'
 ```
 
+Response:
+```bash
+{
+  "ietf-restconf:errors": {
+    "error": [
+      {
+        "error-type": "protocol",
+        "error-tag": "access-denied"
+      }
+    ]
+  }
+}
+```
 When you create a BIG-IP tenant, it behaves like a traditional BIG-IP instance, with its own isolated management IP address and [iControl REST API](https://clouddocs.f5.com/api/icontrol-rest/) endpoint. This compatibility means your [existing BIG-IP Ansible playbooks](https://clouddocs.f5.com/products/orchestration/ansible/devel/f5_bigip/f5_bigip.html)
 will continue to work with minimal changes.  
 
