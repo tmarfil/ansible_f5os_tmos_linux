@@ -16,7 +16,9 @@ CentOS Linux release 7.8.2003 (Core)
 [root@appliance-1(r5900-2):Active] ~ #
 ```
 
-Note: Root access is rarely needed to manage an F5OS appliance. Most tasks can be accomplished via the [F5OS CLI](https://clouddocs.f5.com/api/rseries-api/F5OS-A-1.8.0-cli.html).
+> **Note**  
+> Root access is rarely needed to manage an F5OS appliance. Most tasks can be accomplished via the [F5OS CLI](https://clouddocs.f5.com/api/rseries-api/F5OS-A-1.8.0-cli.html).
+> If you 'substitute user' to the 'admin' user (via the `su` command) or SSH directly as admin@r5900-2, you enter the F5OS CLI. Here you configure low-level network components such as Link Aggregation Groups and VLANs, monitor the F5OS platform, and manage BIG-IP tenants.
 
 If you 'substitute user' to the 'admin' user (via the `su` command) or SSH directly as admin@r5900-2, you enter the F5OS CLI. Here you configure low-level network components such as Link Aggregation Groups and VLANs, monitor the F5OS platform, and manage BIG-IP tenants.
 
@@ -30,6 +32,16 @@ system version service-version 1.8.0-16036
 system version product F5OS-A
 ```
 
+The F5OS CLI is built on op of the [F5OS API](https://clouddocs.f5.com/api/rseries-api/F5OS-A-1.8.0-cli.html#r5r10). With this same admin account, you can target the F5OS API to configure anything at the F5OS layer. A simple test with 'curl' can confirm you are ready to automate via the F5OS API:
+
+```bash
+curl -k -X GET \
+  "https://r5900-2:8888/restconf/data/openconfig-system:system/f5-system-version:version" \
+  -H "Content-Type: application/yang-data+json" \
+  -H "Accept: application/yang-data+json" \
+  -u admin:'YOUR_PASSWORD'
+```
+
 When you create a BIG-IP tenant, it behaves like a traditional BIG-IP instance, with its own isolated management IP address and [iControl REST API](https://clouddocs.f5.com/api/icontrol-rest/) endpoint. This compatibility means your [existing BIG-IP Ansible playbooks](https://clouddocs.f5.com/products/orchestration/ansible/devel/f5_bigip/f5_bigip.html)
 will continue to work with minimal changes.  
 
@@ -38,7 +50,7 @@ However, automation workflows for BIG-IP are not compatible with F5OS. Let's exp
 ## Method 1: F5OS Ansible Collection Modules
 
 ```yaml
-# Using F5OS maintained collection module
+# Using F5OS collection module
 - name: Get F5OS system information using F5OS Ansible module
   f5os_device_info:
     gather_subset:
@@ -190,6 +202,15 @@ Used with `httpapi` connection in the playbook:
     ansible_httpapi_port: 8888
 ```
 
+> **Note**  
+> You may send API calls to either port 8888 or port 443. The URI path will change slightly depending on which TCP port you choose to use:
+> - For port 443: Initial path will be `/api`
+> - For port 8888: Initial path will be `/restconf`
+> 
+> F5OS also listens on port 80 and will redirect to TCP port 443. You can then configure distinct network access control polices for traffic to:
+> - Management interface user interface (443)
+> - Management interface REST API endpoint (8888)
+
 ### CLI Access
 ```yaml
 # hosts.yml
@@ -241,7 +262,7 @@ Used for system information gathering and script execution:
     ansible_connection: ssh
 ```
 
-### Important Notes
+### Notes on *hosts.yml* Inventory Entries
 
 The inventory defines three connections to the same device:
 - `r5900-2-api`: HTTPS API access 
@@ -489,7 +510,7 @@ all:
 ## Terminal Demo
 [![asciicast](https://asciinema.org/a/DmjfpnHKnu2o2dPZ0kFBbe6fm.svg)](https://asciinema.org/a/DmjfpnHKnu2o2dPZ0kFBbe6fm)
 
-## A Note on Software Versions
+## Notes on Software Version Compatability
 
 If using the F5 maintained F5OS collection, you'll need a compatible version of Ansible:
 https://github.com/F5Networks/f5-ansible-f5os
@@ -515,3 +536,4 @@ In production, authentication is more complex, requiring:
 - Secure credential management (e.g. Ansible Vault)
 - Regular credential rotation and audit logging
 - Remote authentication (LDAP, TACACS+, RADIUS)
+- Upgrading from self-signed and unvalidated certificates to Certificate Authority signed and validated certificates
