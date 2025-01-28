@@ -1,6 +1,6 @@
 # Five Ways to Automate F5OS with Ansible: A Practical Guide 
 
-This article explores five methods for automating F5OS using Ansible, complete with real-world examples you can adapt to your environment.
+This article explores five methods for automating F5OS using Ansible, complete with real-world examples you can adapt to your own environment.
 
 ## Understanding F5OS Architecture
 
@@ -8,7 +8,7 @@ Our example system is an F5OS appliance named `r5900-2`.
 
 When you connect to an F5OS device terminal as the root user, you enter a Linux Bash shell:
 
-```bash
+```console
 [root@appliance-1(r5900-2):Active] ~ # uname -r
 3.10.0-1160.71.1.F5.1.1.1.el7_8.x86_64
 [root@appliance-1(r5900-2):Active] ~ # cat /etc/centos-release 
@@ -16,12 +16,11 @@ CentOS Linux release 7.8.2003 (Core)
 [root@appliance-1(r5900-2):Active] ~ #
 ```
 
-> **Note**  
-> Root access is rarely needed to manage an F5OS appliance. Most tasks can be accomplished via the [F5OS CLI](https://clouddocs.f5.com/api/rseries-api/F5OS-A-1.8.0-cli.html).
+Root access is rarely needed to manage an F5OS appliance. Most tasks can be accomplished via the [F5OS CLI](https://clouddocs.f5.com/api/rseries-api/F5OS-A-1.8.0-cli.html).
 
 If you 'substitute user' to the 'admin' user (via the `su` command) or SSH directly as admin@r5900-2, you enter the F5OS CLI. Here you configure low-level network components such as Link Aggregation Groups and VLANs, monitor the F5OS platform, and manage BIG-IP tenants.
 
-```bash
+```console
 [root@appliance-1(r5900-2):Active] ~ # su admin
 Welcome to the Management CLI
 admin connected from 172.18.7.92 using ssh on r5900-2 
@@ -31,17 +30,24 @@ system version service-version 1.8.0-16036
 system version product F5OS-A
 ```
 
-The F5OS CLI is built on top of the [F5OS API](https://clouddocs.f5.com/api/rseries-api/F5OS-A-1.8.0-cli.html#r5r10). With this same admin account, you can target the F5OS API to configure anything at the F5OS layer. A simple test with 'curl' can confirm you are ready to automate via the F5OS API:
+The F5OS CLI is built on top of the [F5OS API](https://clouddocs.f5.com/api/rseries-api/rseries-api-index.html). With this same admin account, you can target the F5OS API to configure anything at the F5OS layer. A simple test with 'curl' can confirm you are ready to automate via the F5OS API:
 
-```bash
-curl -k -X GET \
-  "https://r5900-2:8888/restconf/data/openconfig-system:system/f5-system-version:version" \
-  -H "Content-Type: application/yang-data+json" \
-  -H "Accept: application/yang-data+json" \
-  -u admin:'YOUR_PASSWORD'
+```console
+$ curl -k -X GET \
+f/data/openconfi>   "https://r5900-2:8888/restconf/data/openconfig-system:system/f5-system-version:version" \
+H "Content-Type:>   -H "Content-Type: application/yang-data+json" \
+>   -H "Accept: application/yang-data+json" \
+>   -u admin:'YOUR_PASSWORD'
+{
+  "f5-system-version:version": {
+    "os-version": "1.8.0-16036",
+    "service-version": "1.8.0-16036",
+    "product": "F5OS-A"
+  }
+}
 ```
 
-When you create a BIG-IP tenant, it behaves like a traditional BIG-IP instance, with its own isolated management IP address and [iControl REST API](https://clouddocs.f5.com/api/icontrol-rest/) endpoint. This compatibility means your [existing BIG-IP Ansible playbooks](https://clouddocs.f5.com/products/orchestration/ansible/devel/f5_bigip/f5_bigip.html)
+When you create a BIG-IP tenant, it behaves like a traditional BIG-IP instance. The tenant has its own isolated management IP address and [iControl REST API](https://clouddocs.f5.com/api/icontrol-rest/) endpoint. Your [existing BIG-IP Ansible playbooks](https://clouddocs.f5.com/products/orchestration/ansible/devel/f5_bigip/f5_bigip.html)
 will continue to work with minimal changes.  
 
 However, automation workflows for BIG-IP are not compatible with F5OS. Let's explore how we can automate just about anything on F5OS using Ansible.
@@ -49,7 +55,7 @@ However, automation workflows for BIG-IP are not compatible with F5OS. Let's exp
 ## Method 1: F5OS Ansible Collection Modules
 
 ```yaml
-# Using F5OS collection module
+# Method 1: Using F5OS collection module
 - name: Get F5OS system information using F5OS Ansible module
   f5os_device_info:
     gather_subset:
@@ -72,7 +78,7 @@ However, automation workflows for BIG-IP are not compatible with F5OS. Let's exp
 ## Method 2: Direct REST API Calls
 
 ```yaml
-# Using generic Ansible uri module for REST API
+# Method 2: Using generic Ansible uri module for REST API
 - name: Get F5OS version information using REST API direct call
   uri:
     url: "{{ api_base_url }}/data/openconfig-system:system/f5-system-version:version"
@@ -104,7 +110,7 @@ However, automation workflows for BIG-IP are not compatible with F5OS. Let's exp
 ## Method 3: Linux System Access 
 
 ```yaml
-# Using generic Ansible SSH for Linux system access 
+# Method 3: Using generic Ansible SSH for Linux system access 
 - name: Gather Linux system information via SSH
   setup:
     gather_subset:
@@ -130,7 +136,7 @@ However, automation workflows for BIG-IP are not compatible with F5OS. Let's exp
 ## Method 4: F5OS CLI via SSH
 
 ```yaml 
-# Using generic Ansible shell module for F5OS CLI
+# Method 4: Using generic Ansible shell module for F5OS CLI
 - name: Get F5OS version information via CLI 
   shell: |
     sshpass -p "{{ f5os_cli_password }}" ssh -t -o StrictHostKeyChecking=no admin@{{ hostvars['r5900-2-cli']['ansible_host'] }} << 'EOF'
@@ -155,7 +161,7 @@ However, automation workflows for BIG-IP are not compatible with F5OS. Let's exp
 ## Method 5: Bash Scripts with f5sh
 
 ```yaml
-# Using generic Ansible SSH connection to access the underlying Linux OS
+# Method 5: Using Ansible copy and shell modules to run f5sh commands from Bash scripts
 - name: Transfer f5sh_example.sh script to F5OS device
   copy:
     content: |
@@ -213,14 +219,13 @@ Used with `httpapi` connection in the playbook:
     ansible_httpapi_port: 8888
 ```
 
-> **Note**  
-> You may send API calls to either port 8888 or port 443. The URI path will change slightly depending on which TCP port you choose to use:
-> - For port 443: Initial path will be `/api`
-> - For port 8888: Initial path will be `/restconf`
-> 
-> F5OS also listens on port 80 and will redirect to TCP port 443. You can then configure distinct network access control polices for traffic to:
-> - Management interface user interface (443)
-> - Management interface REST API endpoint (8888)
+You may send API calls to either port 8888 or port 443. The URI path will change slightly depending on which TCP port you choose to use:
+- For port 443: Initial path will be `/api`
+- For port 8888: Initial path will be `/restconf`
+ 
+F5OS also listens on port 80 and will redirect to TCP port 443. You can then configure distinct network access control polices for traffic to:
+- Management interface user interface (443)
+- Management interface REST API endpoint (8888)
 
 ### CLI Access
 ```yaml
@@ -273,7 +278,7 @@ Used for system information gathering and script execution:
     ansible_connection: ssh
 ```
 
-### Notes on *hosts.yml* Inventory Entries
+### Notes on `hosts.yml` Inventory Entries
 
 The inventory defines three connections to the same device:
 - `r5900-2-api`: HTTPS API access 
@@ -521,7 +526,7 @@ all:
 ## Terminal Demo
 [![asciicast](https://asciinema.org/a/DmjfpnHKnu2o2dPZ0kFBbe6fm.svg)](https://asciinema.org/a/DmjfpnHKnu2o2dPZ0kFBbe6fm)
 
-## Notes on Software Version Compatability
+## Notes on Software Version Compatibility
 
 If using the F5 maintained F5OS collection, you'll need a compatible version of Ansible:
 https://github.com/F5Networks/f5-ansible-f5os
