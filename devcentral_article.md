@@ -524,6 +524,9 @@ all:
 ```
 
 ## Terminal Demo
+```bash
+ansible-playbook -i hosts.yml playbook.yml --ask-pass
+```
 [![asciicast](https://asciinema.org/a/DmjfpnHKnu2o2dPZ0kFBbe6fm.svg)](https://asciinema.org/a/DmjfpnHKnu2o2dPZ0kFBbe6fm)
 
 ## Notes on Software Version Compatibility
