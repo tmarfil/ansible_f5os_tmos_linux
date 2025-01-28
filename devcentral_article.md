@@ -55,7 +55,7 @@ However, automation workflows for BIG-IP are not compatible with F5OS. Let's exp
 ## Method 1: F5OS Ansible Collection Modules
 
 ```yaml
-# Method 1: Using F5OS collection module
+# Method 1: Using F5OS collection modules
 - name: Get F5OS system information using F5OS Ansible module
   f5os_device_info:
     gather_subset:
@@ -194,7 +194,7 @@ However, automation workflows for BIG-IP are not compatible with F5OS. Let's exp
 
 ## Inventory and Connection Methods
 
-Each connection method requires specific inventory settings defined in 'hosts.yml':
+Each connection method requires specific inventory settings defined in `hosts.yml`:
 
 ### API Connections 
 ```yaml
@@ -223,7 +223,7 @@ You may send API calls to either port 8888 or port 443. The URI path will change
 - For port 443: Initial path will be `/api`
 - For port 8888: Initial path will be `/restconf`
  
-F5OS also listens on port 80 and will redirect to TCP port 443. You can then configure distinct network access control polices for traffic to:
+You can then configure distinct network access control polices for traffic to:
 - Management interface user interface (443)
 - Management interface REST API endpoint (8888)
 
@@ -295,7 +295,7 @@ Run playbooks with `--ask-pass` to prompt for the root password when accessing t
 ```bash
 ansible-playbook -i hosts.yml playbook.yml --ask-pass
 ```
-See the complete `hosts.yml` and `playbook.yml` examples below as templates for your own environments. The latest versions are hosted on [GitHub](https://github.com/tmarfil/ansible_f5os_tmos_linux).
+See the complete `hosts.yml` and `playbook.yml` examples below that you can use as templates for your own environments. The latest versions are hosted on [GitHub](https://github.com/tmarfil/ansible_f5os_tmos_linux).
 
 ```yaml
 # hosts.yml - Ansible inventory configuration
@@ -415,7 +415,7 @@ all:
     api_base_url: "https://{{ ansible_host }}:{{ ansible_httpapi_port }}/restconf"
 
   tasks:
-    # Method 1: Using F5OS maintained collection module
+    # Method 1: Using F5OS collection modules
     - name: Get F5OS system information using F5OS Ansible module
       f5os_device_info:
         gather_subset:
@@ -461,7 +461,7 @@ all:
       # no_log: false      # Uncomment to show CLI output for debugging
       # failed_when: false # Uncomment to prevent CLI failures for debugging
 
-    # Method 5: Using generic Ansible SSH connection to access the underlying Linux OS
+    # Method 5: Using Ansible copy and shell modules to run f5sh commands from Bash scripts
     - name: Transfer f5sh_example.sh script to F5OS device
       copy:
         content: |
@@ -540,7 +540,7 @@ Python 3.6.8
 
 ...against the [ansible-core support matrix](https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix).
 
-## Responsible Authentication
+## Next Steps: Responsible Authentication
 
 This tutorial focused on simple examples using default local accounts (root, admin) and local authentication.
 
