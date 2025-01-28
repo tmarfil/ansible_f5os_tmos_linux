@@ -75,7 +75,7 @@
     api_base_url: "https://{{ ansible_host }}:{{ ansible_httpapi_port }}/restconf"
 
   tasks:
-    # Method 1: Using F5OS maintained collection module
+    # Method 1: Using F5OS collection modules
     - name: Get F5OS system information using F5OS Ansible module
       f5os_device_info:
         gather_subset:
@@ -121,7 +121,7 @@
       # no_log: false      # Uncomment to show CLI output for debugging
       # failed_when: false # Uncomment to prevent CLI failures for debugging
 
-    # Method 5: Using generic Ansible SSH connection to access the underlying Linux OS
+    # Method : Using Ansible copy and shell modules to run f5sh commands from Bash scripts5
     - name: Transfer f5sh_example.sh script to F5OS device
       copy:
         content: |
