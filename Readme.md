@@ -520,7 +520,6 @@ all:
             # "Debug Info": "{{ script_output | default('script_output not defined') }}"
       debug:
         var: system_info
-(venv-2.16) 7GZL063:
 ```
 
 ## Terminal Demo
